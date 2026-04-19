@@ -1,0 +1,7 @@
+Tautan Github Packages
+
+Untuk repository container image:
+https://ghcr.io/orgbelajar/item-app:v1
+
+Untuk halaman package di website:
+https://github.com/users/orgbelajar/packages/container/package/item-app
