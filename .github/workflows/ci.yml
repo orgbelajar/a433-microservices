@@ -1,0 +1,44 @@
+# Nama workflow yang ditampilkan di tab Actions GitHub
+name: CI Pipeline Karsajobs-UI
+
+# Pemicu workflow setiap ada push ke branch karsajobs-ui
+on:
+  push:
+    branches:
+      - karsajobs-ui
+
+jobs:
+  # Job 1: Memeriksa kualitas sintaks Dockerfile
+  lint-dockerfile:
+    name: Lint Dockerfile
+    runs-on: ubuntu-latest  # Menggunakan runner Linux Ubuntu terbaru
+    steps:
+      # Mengunduh kode repository ke runner
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      # Menjalankan Hadolint untuk memeriksa best practices Dockerfile
+      - name: Install and Run Hadolint Action
+        uses: hadolint/hadolint-action@v3.3.0
+        with:
+          dockerfile: Dockerfile  # File yang akan diperiksa
+
+  # Job 2: Build dan push Docker image ke GHCR
+  build-app-karsajobs-ui:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    # Job ini hanya berjalan jika lint-dockerfile berhasil
+    needs:
+      - lint-dockerfile
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      # Memberi izin eksekusi lalu menjalankan script build dan push image
+      - name: Build and push Docker image
+        run: |
+          chmod +x build_push_image_karsajobs_ui.sh
+          ./build_push_image_karsajobs_ui.sh
+        env:
+          # PAT untuk autentikasi ke GHCR, diambil dari GitHub Secrets
+          KARSAJOBS_PAT: ${{ secrets.KARSAJOBS_PAT }}
