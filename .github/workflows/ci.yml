@@ -1,0 +1,63 @@
+# Nama workflow yang ditampilkan di tab Actions GitHub
+name: CI Pipeline Karsajobs
+
+# Pemicu workflow setiap ada push ke branch karsajobs
+on:
+  push:
+    branches:
+      - karsajobs
+
+jobs:
+  # Job 1: Memeriksa kualitas sintaks Dockerfile
+  lint-dockerfile:
+    name: Lint Dockerfile
+    runs-on: ubuntu-latest  # Menggunakan runner Linux Ubuntu terbaru
+    steps:
+      # Mengunduh kode repository ke runner
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      # Menjalankan Hadolint untuk memeriksa best practices Dockerfile
+      - name: Install and Run Hadolint Action
+        uses: hadolint/hadolint-action@v3.3.0
+        with:
+          dockerfile: Dockerfile  # File yang akan diperiksa
+
+  # Job 2: Menjalankan unit test backend Go
+  test-app:
+    name: Test Application
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      # Menyiapkan Go dengan versi spesifik sesuai go.mod
+      - name: Setup Go Environment
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.15'
+
+      # Menjalankan semua unit test secara verbose, tanpa cache, lewati test lambat
+      - name: Run unit tests
+        run: go test -v -short --count=1 $(go list ./...)
+
+  # Job 3: Build dan push Docker image ke GHCR
+  build-app-karsajobs:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    # Job ini hanya berjalan jika lint-dockerfile dan test-app berhasil
+    needs:
+      - lint-dockerfile
+      - test-app
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      # Memberi izin eksekusi lalu menjalankan script build dan push image
+      - name: Build and push Docker image
+        run: |
+          chmod +x build_push_image_karsajobs.sh
+          ./build_push_image_karsajobs.sh
+        env:
+          # PAT untuk autentikasi ke GHCR, diambil dari GitHub Secrets
+          KARSAJOBS_PAT: ${{ secrets.KARSAJOBS_PAT }}
