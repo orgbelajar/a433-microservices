@@ -1,0 +1,28 @@
+apiVersion: v1           # Menggunakan versi API inti (core) Kubernetes untuk resource PersistentVolume
+kind: PersistentVolume   # Tipe resource ini adalah PersistentVolume (PV), yaitu representasi dari sebuah unit penyimpanan fisik di klaster
+metadata:                # Informasi identitas dari resource ini
+  name: karsajobs-mongo-pv-volume # Nama unik PV ini di dalam klaster
+  labels:
+    type: local          # Label yang menandakan bahwa volume ini bertipe lokal (menggunakan disk dari node)
+spec:                    # Detail teknis dari volume penyimpanan ini
+  storageClassName: manual        # Kelas penyimpanan "manual" berarti PV ini harus diklaim secara eksplisit, tidak menggunakan provisioner otomatis
+  capacity:
+    storage: 800Mi                # Kapasitas total yang disediakan oleh PV ini adalah 800 Megabyte
+  accessModes:
+    - ReadWriteOnce               # Volume ini hanya dapat di-mount oleh satu Node pada satu waktu, baik untuk membaca maupun menulis
+  hostPath:
+    path: "/mnt/data"             # Lokasi direktori di dalam Node (host Minikube) yang dijadikan sumber penyimpanan fisik
+
+---  # Pemisah antar resource dalam satu file YAML; di bawah ini adalah resource kedua (PersistentVolumeClaim)
+
+apiVersion: v1                   # Menggunakan versi API inti (core) Kubernetes untuk resource PersistentVolumeClaim
+kind: PersistentVolumeClaim      # Tipe resource ini adalah PersistentVolumeClaim (PVC), yaitu permintaan dari Pod untuk mendapatkan ruang penyimpanan
+metadata:                        # Informasi identitas dari resource ini
+  name: karsajobs-mongo-pv-claim # Nama PVC ini, akan dirujuk oleh StatefulSet MongoDB saat memasang volume
+spec:                            # Kriteria penyimpanan yang diminta oleh PVC ini
+  storageClassName: manual       # Harus cocok dengan storageClassName pada PV agar PVC ini dapat terikat (bound) ke PV tersebut
+  accessModes:
+    - ReadWriteOnce              # Mode akses yang diminta juga harus cocok dengan yang disediakan oleh PV
+  resources:
+    requests:
+      storage: 800Mi             # Jumlah ruang penyimpanan yang diminta, tidak boleh melebihi kapasitas PV yang tersedia

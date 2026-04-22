@@ -1,0 +1,27 @@
+apiVersion: apps/v1 # Menggunakan versi API apps/v1 yang mendukung resource Deployment
+kind: Deployment    # Tipe resource ini adalah Deployment, yang bertugas menjaga agar Pod selalu berjalan sesuai jumlah replika yang ditentukan
+metadata:           # Informasi identitas dari resource ini
+  name: karsajobs-ui-deployment # Nama unik Deployment ini di dalam klaster
+  labels:           # Label digunakan untuk mengelompokkan dan mengidentifikasi resource
+    app: karsajobs-ui
+    tier: frontend  # Menandakan bahwa resource ini termasuk lapisan frontend
+spec:               # Bagian utama yang mendefinisikan perilaku Deployment
+  replicas: 1       # Kubernetes akan memastikan selalu ada tepat 1 Pod frontend yang berjalan
+  selector:         # Cara Deployment mengenali Pod mana yang menjadi tanggung jawabnya
+    matchLabels:    # Deployment hanya akan mengelola Pod yang memiliki label berikut
+      tier: frontend
+  template:         # Template (cetak biru) yang dipakai untuk membuat Pod baru
+    metadata:
+      labels:       # Label ini harus cocok dengan selector di atas agar Pod dapat dikenali oleh Deployment
+        app: karsajobs-ui
+        tier: frontend
+    spec:           # Spesifikasi isi dari Pod yang akan dibuat
+      containers:
+      - name: karsajobs-ui                              # Nama kontainer di dalam Pod
+        image: ghcr.io/orgbelajar/karsajobs-ui:latest   # Image Docker yang digunakan, diambil dari GitHub Container Registry
+        imagePullPolicy: IfNotPresent                   # Image hanya ditarik dari registry jika belum tersedia di node, menghemat bandwidth
+        ports:
+          - containerPort: 8000                         # Port yang dibuka di dalam kontainer tempat aplikasi frontend (Vue.js) mendengarkan request
+        env:                                            # Variabel lingkungan yang dikirim ke dalam kontainer saat startup
+        - name: VUE_APP_BACKEND                         # Variabel ini dibaca oleh aplikasi Vue.js sebagai alamat tujuan untuk memanggil API backend
+          value: "http://192.168.49.2:30008"            # Diisi dengan IP Node Minikube dan NodePort dari Service backend

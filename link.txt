@@ -1,0 +1,7 @@
+Github Packages
+
+karsajobs-ui latest:
+https://github.com/users/orgbelajar/packages/container/package/karsajobs-ui
+
+karsajobs latest:
+https://github.com/users/orgbelajar/packages/container/package/karsajobs

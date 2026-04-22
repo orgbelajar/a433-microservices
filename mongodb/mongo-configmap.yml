@@ -1,0 +1,8 @@
+apiVersion: v1  # Menggunakan versi API inti (core) Kubernetes untuk resource ConfigMap
+kind: ConfigMap # Tipe resource ini adalah ConfigMap, digunakan untuk menyimpan konfigurasi non-sensitif agar terpisah dari image Docker
+metadata:       # Informasi identitas dari resource ini
+  name: karsajobs-mongo-configmap # Nama ConfigMap ini, akan dirujuk oleh StatefulSet saat memasang volume
+data:           # Berisi pasangan kunci-nilai yang menjadi isi dari ConfigMap
+  mongo.conf: | # Kunci bernama "mongo.conf" dengan nilai berupa teks multi-baris (format literal block dengan tanda |), menginstruksikan MongoDB untuk menyimpan data di direktori /data/db di dalam kontainer
+    storage:
+      dbPath: /data/db 

@@ -1,0 +1,14 @@
+apiVersion: v1   # Menggunakan versi API inti (core) Kubernetes untuk resource Service
+kind: Service    # Tipe resource ini adalah Service, yang bertugas sebagai pintu masuk jaringan menuju Pod
+metadata:        # Informasi identitas dari resource ini
+  name: karsajobs-mongo-service # Nama Service ini juga berfungsi sebagai hostname DNS internal, digunakan di konfigurasi MONGO_HOST pada Deployment backend
+  labels:
+    app: karsajobs-mongo
+    tier: database
+spec:
+  ports:
+    - port: 27017  # Port standar MongoDB yang akan diekspos oleh Service ini
+  selector:        # Service akan meneruskan traffic hanya ke Pod yang memiliki label berikut
+    app: karsajobs-mongo
+    tier: database
+  clusterIP: None  # Pengaturan ini menjadikan Service sebagai "Headless Service", artinya tidak ada IP virtual yang dibuat. Ini diperlukan agar StatefulSet dapat memberikan identitas DNS yang stabil dan unik untuk setiap Pod (misalnya: karsajobs-mongo-statefulset-0.karsajobs-mongo-service)

@@ -1,0 +1,15 @@
+apiVersion: v1   # Menggunakan versi API inti (core) Kubernetes untuk resource Service
+kind: Service    # Tipe resource ini adalah Service, yang bertugas sebagai pintu masuk jaringan menuju Pod
+metadata:        # Informasi identitas dari resource ini
+  name: karsajobs-ui-service # Nama Service ini juga berfungsi sebagai hostname DNS internal di dalam klaster
+  labels:
+    app: karsajobs-ui
+    tier: frontend
+spec:
+  ports:
+  - port: 8000       # Port yang diekspos oleh Service di dalam klaster
+    nodePort: 30007  # Port statis yang dibuka di setiap Node, digunakan untuk mengakses UI dari luar klaster (misalnya dari browser)
+  selector:          # Service akan meneruskan traffic hanya ke Pod yang memiliki label berikut
+    app: karsajobs-ui
+    tier: frontend
+  type: NodePort     # Tipe ini membuat Service bisa diakses dari luar klaster melalui IP Node dan NodePort yang ditentukan

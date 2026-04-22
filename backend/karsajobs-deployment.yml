@@ -1,0 +1,39 @@
+apiVersion: apps/v1 # Menggunakan versi API apps/v1 yang mendukung resource Deployment
+kind: Deployment    # Tipe resource ini adalah Deployment, yang bertugas menjaga agar Pod selalu berjalan sesuai jumlah replika yang ditentukan
+metadata:           # Informasi identitas dari resource ini
+  name: karsajobs-backend-deployment # Nama unik Deployment ini di dalam klaster
+  labels:           # Label digunakan untuk mengelompokkan dan mengidentifikasi resource
+    app: karsajobs-backend
+    tier: backend   # Menandakan bahwa resource ini termasuk lapisan backend
+spec:               # Bagian utama yang mendefinisikan perilaku Deployment
+  replicas: 1       # Kubernetes akan memastikan selalu ada tepat 1 Pod backend yang berjalan
+  selector:         # Cara Deployment mengenali Pod mana yang menjadi tanggung jawabnya
+    matchLabels:    # Deployment hanya akan mengelola Pod yang memiliki label berikut
+      tier: backend
+  template:         # Template (cetak biru) yang dipakai untuk membuat Pod baru
+    metadata:
+      labels:       # Label ini harus cocok dengan selector di atas agar Pod dapat dikenali oleh Deployment
+        app: karsajobs-backend
+        tier: backend
+    spec:           # Spesifikasi isi dari Pod yang akan dibuat
+      containers:
+      - name: karsajobs-backend                         # Nama kontainer di dalam Pod
+        image: ghcr.io/orgbelajar/karsajobs:latest      # Image Docker yang digunakan, diambil dari GitHub Container Registry
+        imagePullPolicy: IfNotPresent                   # Image hanya ditarik dari registry jika belum tersedia di node, menghemat bandwidth
+        ports:
+          - containerPort: 8080                         # Port yang dibuka di dalam kontainer tempat aplikasi backend mendengarkan request
+        env:                                            # Variabel lingkungan yang dikirim ke dalam kontainer saat startup
+        - name: APP_PORT                                # Memberi tahu aplikasi untuk berjalan di port ini
+          value: "8080"                                 # Nilainya harus string (dalam tanda kutip) karena skema Kubernetes mengharuskan tipe data string untuk env value
+        - name: MONGO_HOST                              # Alamat host MongoDB yang digunakan oleh backend untuk terhubung ke database
+          value: karsajobs-mongo-service                # Menggunakan nama Service MongoDB, yang secara otomatis menjadi DNS internal di dalam klaster
+        - name: MONGO_USER                              # Username untuk autentikasi ke MongoDB
+          valueFrom:
+            secretKeyRef:                              # Nilainya tidak ditulis langsung, melainkan diambil dari objek Secret agar tetap aman
+              name: karsajobs-mongo-secret             # Nama Secret yang menyimpan kredensial MongoDB
+              key: MONGO_ROOT_USERNAME                 # Kunci spesifik di dalam Secret yang berisi username
+        - name: MONGO_PASS                              # Password untuk autentikasi ke MongoDB
+          valueFrom:
+            secretKeyRef:                              # Sama seperti username, password juga diambil dari Secret
+              name: karsajobs-mongo-secret
+              key: MONGO_ROOT_PASSWORD                 # Kunci spesifik di dalam Secret yang berisi password

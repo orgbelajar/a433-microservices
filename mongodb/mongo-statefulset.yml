@@ -1,0 +1,54 @@
+apiVersion: apps/v1 # Menggunakan versi API apps/v1 yang mendukung resource StatefulSet
+kind: StatefulSet   # Tipe resource ini adalah StatefulSet, dipilih untuk database karena ia menjamin setiap Pod mendapat identitas jaringan dan penyimpanan yang persisten dan stabil, berbeda dengan Deployment yang Pod-nya bersifat anonim
+metadata:           # Informasi identitas dari resource ini
+  name: karsajobs-mongo-statefulset # Nama unik StatefulSet ini di dalam klaster
+  labels:
+    app: karsajobs-mongo
+    tier: database
+spec:               # Bagian utama yang mendefinisikan perilaku StatefulSet
+  selector:         # Cara StatefulSet mengenali Pod mana yang menjadi tanggung jawabnya
+    matchLabels:    # StatefulSet hanya akan mengelola Pod yang memiliki label berikut
+      app: karsajobs-mongo
+      tier: database
+  serviceName: karsajobs-mongo-service # Menghubungkan StatefulSet ke Headless Service, yang dibutuhkan untuk membuat alamat DNS unik per Pod
+  replicas: 1                          # Kubernetes akan menjalankan tepat 1 Pod MongoDB
+  minReadySeconds: 10                  # Pod dianggap siap melayani traffic setelah berjalan stabil selama 10 detik
+  template:                            # Template (cetak biru) yang dipakai untuk membuat Pod baru
+    metadata:
+      labels:                          # Label ini harus cocok dengan selector di atas agar Pod dapat dikenali oleh StatefulSet
+        app: karsajobs-mongo
+        tier: database
+    spec:                                # Spesifikasi isi dari Pod yang akan dibuat
+      terminationGracePeriodSeconds: 10  # Saat Pod dihentikan, Kubernetes menunggu maksimal 10 detik agar MongoDB sempat menyelesaikan proses shutdown dengan aman sebelum dipaksa berhenti
+      containers:
+      - image: mongo:3                 # Menggunakan image MongoDB versi 3 dari Docker Hub
+        name: mongo                    # Nama kontainer di dalam Pod
+        imagePullPolicy: IfNotPresent  # Image hanya ditarik dari registry jika belum tersedia di node, menghemat bandwidth
+        env:                           # Variabel lingkungan yang dikirim ke dalam kontainer saat startup
+        - name: MONGO_INITDB_ROOT_USERNAME_FILE             # Memberitahu MongoDB untuk membaca username dari sebuah file, bukan dari variabel teks biasa, agar lebih aman
+          value: /etc/mongo-credentials/MONGO_ROOT_USERNAME # Lokasi file yang berisi username, di mana file ini berasal dari Secret yang di-mount sebagai volume
+        - name: MONGO_INITDB_ROOT_PASSWORD_FILE             # Memberitahu MongoDB untuk membaca password dari sebuah file, dengan cara yang sama seperti username
+          value: /etc/mongo-credentials/MONGO_ROOT_PASSWORD # Lokasi file yang berisi password
+        ports:
+        - containerPort: 27017              # Port standar MongoDB yang dibuka di dalam kontainer
+          name: mongo
+        volumeMounts:                       # Mendaftarkan volume yang akan dipasang (di-mount) ke dalam sistem file kontainer
+        - name: mongo-persistent-volume
+          mountPath: /data/db               # Volume penyimpanan permanen dipasang di sini, agar data MongoDB tidak hilang saat Pod di-restart
+        - name: mongo-config-volume
+          mountPath: /config                # File konfigurasi MongoDB (mongo.conf) dipasang di direktori ini
+        - name: mongo-secret-volume
+          mountPath: /etc/mongo-credentials # File-file berisi kredensial (username & password) dari Secret dipasang di direktori ini
+      volumes:                                  # Mendefinisikan sumber-sumber volume yang digunakan oleh volumeMounts di atas
+      - name: mongo-persistent-volume           # Sumber volume pertama: penyimpanan permanen dari PVC
+        persistentVolumeClaim:
+          claimName: karsajobs-mongo-pv-claim   # Merujuk ke PVC yang telah dibuat sebelumnya di mongo-pv-pvc.yml
+      - name: mongo-config-volume               # Sumber volume kedua: file konfigurasi dari ConfigMap
+        configMap:
+          name: karsajobs-mongo-configmap       # Merujuk ke ConfigMap yang telah dibuat di mongo-configmap.yml
+          items:
+          - key: mongo.conf                     # Mengambil entri dengan kunci "mongo.conf" dari ConfigMap
+            path: mongo.conf                    # Menyimpannya sebagai file bernama "mongo.conf" di dalam direktori mount
+      - name: mongo-secret-volume               # Sumber volume ketiga: kredensial sensitif dari Secret
+        secret:
+          secretName: karsajobs-mongo-secret    # Merujuk ke Secret yang telah dibuat di mongo-secret.yml; setiap kunci di dalamnya akan menjadi sebuah file di dalam direktori mount
