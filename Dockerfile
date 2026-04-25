@@ -8,7 +8,7 @@ WORKDIR /app
 ENV PORT=3001
 
 # Mengatur environment variable bawaan untuk URL koneksi RabbitMQ Cluster Operator
-ENV AMQP_URL="amqp://default_user_DKqOCPcGL6uqajWNPzb:-qCBD8i_FVHG9xSWbOu4nK7kO2h8tIi3@rmq-cluster-operator-server.ecommerce-app.svc:5672"
+ENV AMQP_URL="amqp://default_user_NFWFbePXgIldKO2eDFn:xaoEbawTzMWElGKsWo1cziXSywUu61__@rmq-cluster-operator-server.ecommerce-app.svc:5672"
 
 # Menyalin file package.json dan package-lock.json ke dalam direktori kerja
 COPY package*.json ./
