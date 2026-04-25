@@ -1,0 +1,7 @@
+Github Packages
+
+order-service latest:
+https://github.com/users/orgbelajar/packages/container/package/order-service
+
+shipping-service latest:
+https://github.com/users/orgbelajar/packages/container/package/shipping-service

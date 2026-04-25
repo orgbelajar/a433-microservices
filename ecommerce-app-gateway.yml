@@ -1,0 +1,35 @@
+apiVersion: networking.istio.io/v1alpha3       # Versi API Istio untuk pengaturan jaringan
+kind: Gateway                                  # Jenis resource untuk membuka gerbang dari luar kluster
+metadata:                                      # Informasi identitas tentang resource ini
+  name: ecommerce-app-gateway                  # Nama dari Gateway ini
+  namespace: ecommerce-app                     # Tempat (Namespace) berjalannya Gateway ini
+spec:                                          # Spesifikasi konfigurasi Gateway
+  selector:                                    # Cara menemukan pod penyedia Gateway fisik
+    istio: ingressgateway                      # Memilih pod bawaan Istio Ingress Gateway
+  servers:                                     # Daftar server/port yang akan dibuka
+  - port:                                      # Konfigurasi port spesifik
+      number: 80                               # Nomor port yang akan dibuka (80 untuk HTTP standar)
+      name: http                               # Nama dari port ini
+      protocol: HTTP                           # Protokol komunikasi yang digunakan (HTTP)
+    hosts:                                     # Daftar host/domain yang diizinkan masuk
+    - "*"                                      # Mengizinkan semua domain (wildcard) masuk
+---                                            # Pemisah antar resource Kubernetes
+apiVersion: networking.istio.io/v1alpha3       # Versi API Istio untuk pengaturan jaringan
+kind: VirtualService                           # Jenis resource pengatur lalu lintas ke dalam aplikasi
+metadata:                                      # Informasi identitas tentang resource ini
+  name: ecommerce-app-virtual-service          # Nama dari VirtualService ini
+  namespace: ecommerce-app                     # Tempat (Namespace) berjalannya VirtualService ini
+spec:                                          # Spesifikasi konfigurasi lalu lintas
+  hosts:                                       # Domain yang akan ditangani oleh rute ini
+  - "*"                                        # Menangani semua domain (wildcard)
+  gateways:                                    # Gateway mana yang menggunakan aturan ini
+  - ecommerce-app-gateway                      # Menggunakan Gateway yang kita definisikan di atas
+  http:                                        # Aturan rute khusus untuk protokol HTTP
+  - match:                                     # Kondisi yang harus terpenuhi agar trafik dialihkan
+    - uri:                                     # Mencocokkan berdasarkan jalur URL (URI)
+        exact: /order                          # URL harus sama persis dengan '/order'
+    route:                                     # Tindakan jika URL cocok
+    - destination:                             # Tujuan akhir pengalihan trafik
+        host: order-service                    # Nama Service Kubernetes yang akan dituju
+        port:                                  # Port spesifik pada Service tujuan
+          number: 3000                         # Port yang digunakan oleh order-service

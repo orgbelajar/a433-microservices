@@ -1,0 +1,121 @@
+# Order service
+apiVersion: v1                                 # Versi API Kubernetes untuk resource dasar
+kind: Service                                  # Jenis resource untuk menyeimbangkan beban & jaringan
+metadata:                                      # Informasi identitas tentang resource ini
+  name: order-service                          # Nama Service jaringan untuk aplikasi order
+  namespace: ecommerce-app                     # Tempat (Namespace) berjalannya Service ini
+  labels:                                      # Label penanda untuk mengelompokkan Service ini
+    app: order-service                         # Menandai Service ini bagian dari aplikasi order
+    tier: producer                             # Menandai peran sebagai pembuat pesan (producer)
+spec:                                          # Spesifikasi jaringan untuk Service ini
+  ports:                                       # Daftar port yang akan di-ekspos oleh Service
+  - port: 3000                                 # Port yang akan dibuka pada Service ini
+    name: order-service                        # Nama dari port ini
+    protocol: TCP                              # Protokol lapisan transport yang digunakan (TCP)
+  selector:                                    # Cara menemukan pod aplikasi yang akan dilayani
+    app: order-service                         # Mencari pod dengan label 'app: order-service'
+    tier: producer                             # Mencari pod dengan label 'tier: producer'
+---                                            # Pemisah antar resource Kubernetes
+apiVersion: v1                                 # Versi API Kubernetes untuk resource dasar
+kind: ServiceAccount                           # Akun identitas keamanan untuk aplikasi dalam pod
+metadata:                                      # Informasi identitas tentang resource ini
+  name: ecommerce-app-orders                   # Nama Service Account untuk aplikasi order
+  namespace: ecommerce-app                     # Tempat (Namespace) berjalannya Service Account ini
+  labels:                                      # Label penanda untuk mengelompokkan Service Account ini
+    account: order-service                     # Menandai bahwa akun ini milik aplikasi order
+---                                            # Pemisah antar resource Kubernetes
+apiVersion: apps/v1                            # Versi API Kubernetes untuk pengelola aplikasi
+kind: Deployment                               # Jenis resource untuk menjalankan & menjaga pod tetap hidup
+metadata:                                      # Informasi identitas tentang resource ini
+  name: orders-deployment                      # Nama dari Deployment ini
+  namespace: ecommerce-app                     # Tempat (Namespace) berjalannya Deployment ini
+  labels:                                      # Label penanda untuk mengelompokkan Deployment ini
+    app: order-service                         # Menandai Deployment ini bagian dari aplikasi order
+    tier: producer                             # Menandai peran sebagai pembuat pesan (producer)
+spec:                                          # Spesifikasi jalannya Deployment
+  replicas: 1                                  # Jumlah pod replika yang harus dijalankan
+  selector:                                    # Cara Deployment mengenali pod miliknya
+    matchLabels:                               # Mencocokkan berdasarkan label
+      app: order-service                       # Harus memiliki label 'app: order-service'
+      tier: producer                           # Harus memiliki label 'tier: producer'
+  template:                                    # Cetak biru (blueprint) untuk membuat pod baru
+    metadata:                                  # Informasi identitas untuk pod yang dibuat
+      labels:                                  # Label yang akan ditempelkan pada pod yang dibuat
+        app: order-service                     # Label wajib agar cocok dengan selector
+        tier: producer                         # Label wajib agar cocok dengan selector
+    spec:                                      # Spesifikasi pod yang akan dijalankan
+      serviceAccountName: ecommerce-app-orders # Akun identitas keamanan yang akan dipakai pod ini
+      containers:                              # Daftar kontainer yang berjalan di dalam pod
+      - name: order-service                    # Nama kontainer yang berjalan
+        image: ghcr.io/orgbelajar/order-service:latest # Alamat & versi image Docker yang digunakan
+        imagePullPolicy: IfNotPresent          # Hanya unduh image jika belum ada di lokal
+        ports:                                 # Daftar port yang dibuka oleh kontainer ini
+        - containerPort: 3000                  # Port aplikasi di dalam kontainer yang siap menerima trafik
+        securityContext:                       # Pengaturan keamanan khusus untuk kontainer ini
+          runAsUser: 1000                      # Menjalankan kontainer sebagai non-root (user ID 1000)
+        env:                                   # Variabel lingkungan yang dikirim ke aplikasi
+        - name: PORT                           # Variabel penentu port berjalannya aplikasi
+          value: "3000"                        # Aplikasi akan mendengarkan di port 3000
+        - name: AMQP_URL                       # Variabel alamat koneksi ke RabbitMQ
+          value: "amqp://default_user_NFWFbePXgIldKO2eDFn:xaoEbawTzMWElGKsWo1cziXSywUu61__@rmq-cluster-operator-server.ecommerce-app.svc:5672?frameMax=0" # URL koneksi RabbitMQ beserta kredensial
+---                                            # Pemisah antar resource Kubernetes
+# Shipping service
+apiVersion: v1                                 # Versi API Kubernetes untuk resource dasar
+kind: Service                                  # Jenis resource untuk menyeimbangkan beban & jaringan
+metadata:                                      # Informasi identitas tentang resource ini
+  name: shipping-service                       # Nama Service jaringan untuk aplikasi pengiriman
+  namespace: ecommerce-app                     # Tempat (Namespace) berjalannya Service ini
+  labels:                                      # Label penanda untuk mengelompokkan Service ini
+    app: shipping-service                      # Menandai Service ini bagian dari aplikasi pengiriman
+    tier: consumer                             # Menandai peran sebagai penerima pesan (consumer)
+spec:                                          # Spesifikasi jaringan untuk Service ini
+  ports:                                       # Daftar port yang akan di-ekspos oleh Service
+  - port: 3001                                 # Port yang akan dibuka pada Service ini
+    name: shipping-service                     # Nama dari port ini
+    protocol: TCP                              # Protokol lapisan transport yang digunakan (TCP)
+  selector:                                    # Cara menemukan pod aplikasi yang akan dilayani
+    app: shipping-service                      # Mencari pod dengan label 'app: shipping-service'
+    tier: consumer                             # Mencari pod dengan label 'tier: consumer'
+---                                            # Pemisah antar resource Kubernetes
+apiVersion: v1                                 # Versi API Kubernetes untuk resource dasar
+kind: ServiceAccount                           # Akun identitas keamanan untuk aplikasi dalam pod
+metadata:                                      # Informasi identitas tentang resource ini
+  name: ecommerce-app-shipping                 # Nama Service Account untuk aplikasi pengiriman
+  namespace: ecommerce-app                     # Tempat (Namespace) berjalannya Service Account ini
+  labels:                                      # Label penanda untuk mengelompokkan Service Account ini
+    account: shipping-service                  # Menandai bahwa akun ini milik aplikasi pengiriman
+---                                            # Pemisah antar resource Kubernetes
+apiVersion: apps/v1                            # Versi API Kubernetes untuk pengelola aplikasi
+kind: Deployment                               # Jenis resource untuk menjalankan & menjaga pod tetap hidup
+metadata:                                      # Informasi identitas tentang resource ini
+  name: shipping-deployment                    # Nama dari Deployment ini
+  namespace: ecommerce-app                     # Tempat (Namespace) berjalannya Deployment ini
+  labels:                                      # Label penanda untuk mengelompokkan Deployment ini
+    app: shipping-service                      # Menandai Deployment ini bagian dari aplikasi pengiriman
+    tier: consumer                             # Menandai peran sebagai penerima pesan (consumer)
+spec:                                          # Spesifikasi jalannya Deployment
+  replicas: 1                                  # Jumlah pod replika yang harus dijalankan
+  selector:                                    # Cara Deployment mengenali pod miliknya
+    matchLabels:                               # Mencocokkan berdasarkan label
+      app: shipping-service                    # Harus memiliki label 'app: shipping-service'
+      tier: consumer                           # Harus memiliki label 'tier: consumer'
+  template:                                    # Cetak biru (blueprint) untuk membuat pod baru
+    metadata:                                  # Informasi identitas untuk pod yang dibuat
+      labels:                                  # Label yang akan ditempelkan pada pod yang dibuat
+        app: shipping-service                  # Label wajib agar cocok dengan selector
+        tier: consumer                         # Label wajib agar cocok dengan selector
+    spec:                                      # Spesifikasi pod yang akan dijalankan
+      serviceAccountName: ecommerce-app-shipping # Akun identitas keamanan yang akan dipakai pod ini
+      containers:                              # Daftar kontainer yang berjalan di dalam pod
+      - name: shipping-service                 # Nama kontainer yang berjalan
+        image: ghcr.io/orgbelajar/shipping-service:latest # Alamat & versi image Docker yang digunakan
+        imagePullPolicy: IfNotPresent          # Hanya unduh image jika belum ada di lokal
+        ports:                                 # Daftar port yang dibuka oleh kontainer ini
+        - containerPort: 3001                  # Port aplikasi di dalam kontainer yang siap menerima trafik
+        securityContext:                       # Pengaturan keamanan khusus untuk kontainer ini
+          runAsUser: 1000                      # Menjalankan kontainer sebagai non-root (user ID 1000)
+        env:                                   # Variabel lingkungan yang dikirim ke aplikasi
+        - name: PORT                           # Variabel penentu port berjalannya aplikasi
+          value: "3001"                        # Aplikasi akan mendengarkan di port 3001
+        - name: AMQP_URL                       # Variabel alamat koneksi ke RabbitMQ
+          value: "amqp://default_user_NFWFbePXgIldKO2eDFn:xaoEbawTzMWElGKsWo1cziXSywUu61__@rmq-cluster-operator-server.ecommerce-app.svc:5672?frameMax=0" # URL koneksi RabbitMQ beserta kredensial

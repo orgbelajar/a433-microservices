@@ -1,0 +1,14 @@
+apiVersion: rabbitmq.com/v1beta1               # Versi API dari RabbitMQ Cluster Operator
+kind: RabbitmqCluster                          # Jenis resource yang mendefinisikan cluster RabbitMQ
+metadata:                                      # Informasi identitas tentang resource ini
+  name: rmq-cluster-operator-server            # Nama dari cluster RabbitMQ yang akan dibuat
+  namespace: ecommerce-app                     # Tempat (Namespace) berjalannya RabbitMQ ini
+spec:                                          # Spesifikasi atau konfigurasi dari RabbitMQ
+  replicas: 1                                  # Jumlah pod/node RabbitMQ yang akan dijalankan
+  resources:                                   # Aturan penggunaan sumber daya komputasi
+    requests:                                  # Sumber daya minimal yang harus tersedia
+      cpu: 500m                                # Minimal CPU yang dibutuhkan (setengah core)
+      memory: 1Gi                              # Minimal RAM yang dibutuhkan (1 Gigabyte)
+    limits:                                    # Batas maksimal sumber daya yang boleh dipakai
+      cpu: 1                                   # Maksimal CPU yang boleh digunakan (1 core)
+      memory: 2Gi                              # Maksimal RAM yang boleh digunakan (2 Gigabyte)

@@ -1,0 +1,7 @@
+apiVersion: v1                  # Versi API Kubernetes untuk resource dasar
+kind: Namespace                 # Jenis resource yang akan dibuat adalah Namespace
+metadata:                       # Informasi identitas tentang resource ini
+  name: ecommerce-app           # Nama Namespace yang akan dibuat
+  labels:                       # Label untuk mengidentifikasi Namespace ini
+    app: ecommerce-app          # Menandai bahwa ini milik aplikasi ecommerce
+    istio-injection: enabled    # Mengaktifkan penyuntikan sidecar Envoy otomatis dari Istio
